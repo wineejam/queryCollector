@@ -1,0 +1,87 @@
+# n9e 上报地址
+prometheusUrl = "http://your_categraf_ip:9100/api/push/pushgateway"
+# 文件include方式加载子配置项
+targetFileNames = [
+    "config/xxx.toml",
+    "config/yyy.toml",
+]
+#log setting
+[logsetting]
+# 是否打印终端日志：true/false
+consoleLog = true
+# 日志级别：debug,info,warn,error
+level = "debug"
+# 日志切割时间（单位：小时）
+rotation = 24
+# 日志转储保留个数
+save = 7
+
+[targets]
+[[targets.es]] # es-sql查询
+conn = "http://xxx:xxx@your_es_ip:9200"
+[[targets.es.metrics]]
+cron = "*/10 * * * * *"
+name = "test_es"
+description = "test_es查询"
+# 默认只需要填写索引前缀，自动填充当天日期（csidc_nginx_log_ -->  csidc_nginx_log_20240528）
+# 索引名可直接指定为csidc_nginx_log_*形式，*不建议*
+indices = "you_indices_name"
+# 查询语句（SQL写法），注意索引名称固定写为 indices_placeholder
+content = """
+your es sql query
+"""
+labels = { business="es-demo", stage="develop", address="xxx",host="xxx" }
+
+[[targets.redis]]  # redis
+conn = "your_redis_ip:6379"
+pass = "xxx"
+db = 15
+[[targets.redis.metrics]]
+# 定时任务表达式
+cron = "*/30 * * * * *"
+# redis的类型：取值：string，hash，取长度：list，set，zset
+type = "hash"
+# redis key 名称，如果是hash类型，则用,分隔Redis key名和hash的key名，value为float64
+key = "test_hash_key,demo"
+# 指标名称
+name = "test_redis_hash"
+# 指标描述
+description = "测试Redis Hash"
+
+[[targets.rdbms]] # 关系型数据库（MySQL、PostgreSQL、Oracle）
+conn = "r_monitor:xxx@tcp(your_mysql_ip:3306)/your_db_name?charset=utf8"
+type = "mysql"
+maxConn = 5  # 最大连接数，默认5个够用了，0表示不限制（没有此配置项表示为0）
+[[targets.rdbms.metrics]]
+cron = "*/30 * * * * *"
+name = "test_db_1"
+description = "test_mysql_query"
+isTag = false
+content = """
+SELECT xxx from xxx
+"""
+
+[[targets.mongodb]] # MongoDB
+conn = "mongodb://xxx:xxxx@your_mongodb_ip:27017/test"
+[[targets.mongodb.metrics]]
+cron = "*/30 * * * * *"
+name = "test_mongo11"
+description = "test_mongo11"
+# Mongodb的集合名称（table名）
+collection = "test_mongo"
+queryType = "COUNT"  # 取值COUNT或FIELD FIELD表示直接取值，需要指定字段（float64类型）  COUNT表示统计总数
+queryField = ""  # 查询结果取指定的字段： 只在queryType为FIELD时生效
+# 查询的json，使用3个双引号包裹
+queryJson = """{"Name": "John Doe"}"""
+
+[[targets.mongodb.metrics]]
+cron = "*/30 * * * * *"
+name = "test_mongo22"
+description = "test_mongo22"
+# Mongodb的集合名称（table名）
+collection = "test_mongo"
+queryType = "FIELD"   # 取值COUNT或FIELD FIELD表示直接取值，需要指定字段（float64类型）  COUNT表示统计总数
+queryField = "age"  # 查询结果取指定的字段： 只在queryType为FIELD时生效
+# 查询的json，使用3个双引号包裹，需要保证结果为唯一，否则只取最后一条数据的值
+queryJson = """{"age" : {"$gte" : 10, "$lte" : 30}}"""
+
